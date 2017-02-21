@@ -59,7 +59,7 @@ function MRS_struct=GannetLoad(gabafile, waterfile) %, data_phase_correction, wa
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   1. Pre-initialise
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-MRS_struct.versionload = '161029';  %'140709'; %format - yy/mm/dd  -- MGSaleh 2016
+MRS_struct.versionload = 'hackathon-170223';  %'140709'; %format - yy/mm/dd  -- MGSaleh 2016
 MRS_struct.ii=0;
 MRS_struct.gabafile=gabafile;
 MRS_struct=GannetPreInitialise(MRS_struct);
@@ -207,7 +207,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             MRS_struct.p.LarmorFreq;
             % work out frequency scale 121106 (remving CSize)
             freqrange=MRS_struct.p.sw/MRS_struct.p.LarmorFreq;
-            MRS_struct.spec.freq=(MRS_struct.p.ZeroFillTo+1-(1:1:MRS_struct.p.ZeroFillTo))/MRS_struct.p.ZeroFillTo*freqrange+4.68-freqrange/2.0;
+            MRS_struct.spec.freq(ii,:)=(MRS_struct.p.ZeroFillTo+1-(1:1:MRS_struct.p.ZeroFillTo))/MRS_struct.p.ZeroFillTo*freqrange+4.68-freqrange/2.0;
             MRS_struct.out.FreqPhaseAlign=0;
             %Data are always read in OFF then ON            
             totalframes = 2;
@@ -392,16 +392,16 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             %MRS_struct.p.LarmorFreq
             freqrange=MRS_struct.p.sw/MRS_struct.p.LarmorFreq;
             if ~strcmp(gabafile{ii}((end-3):end),'.mat')
-                MRS_struct.spec.freq = (MRS_struct.p.ZeroFillTo+1-(1:1:MRS_struct.p.ZeroFillTo))/MRS_struct.p.ZeroFillTo*freqrange+4.68-freqrange/2.0;
+                MRS_struct.spec.freq(ii,:) = (MRS_struct.p.ZeroFillTo+1-(1:1:MRS_struct.p.ZeroFillTo))/MRS_struct.p.ZeroFillTo*freqrange+4.68-freqrange/2.0;
             else
-                MRS_struct.spec.freq = interp1(simHermes.ppm, simHermes.ppm, linspace(min(simHermes.ppm), max(simHermes.ppm), MRS_struct.p.ZeroFillTo));
+                MRS_struct.spec.freq(ii,:) = interp1(simHermes.ppm, simHermes.ppm, linspace(min(simHermes.ppm), max(simHermes.ppm), MRS_struct.p.ZeroFillTo));
             end
 
             %  Frame-by-frame Determination of max Frequency in spectrum (assumed water) maximum
             % find peak location for frequency realignment
             % MM (170201)
-            lb = find(MRS_struct.spec.freq-4.68 >= -0.5);
-            ub = find(MRS_struct.spec.freq-4.68 <= 0.5);
+            lb = find(MRS_struct.spec.freq(ii,:)-4.68 >= -0.5);
+            ub = find(MRS_struct.spec.freq(ii,:)-4.68 <= 0.5);
             water_range = intersect(lb,ub);
             FrameMax = max(abs(AllFramesFT(water_range,:)),[],1);
             FrameMaxPos = zeros(1,size(AllFramesFT,2));
@@ -409,7 +409,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 FrameMaxPos(kk) = find(abs(AllFramesFT(:,kk)) == FrameMax(kk));
             end
             %Not always true that water starts at 4.68, if drift is rapid...
-            water_off=abs(MRS_struct.spec.freq-4.68);
+            water_off=abs(MRS_struct.spec.freq(ii,:)-4.68);
             water_index=find(min(water_off)==water_off);
             % Determine Frame shifts
             FrameShift = FrameMaxPos - water_index;
@@ -432,7 +432,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                       AllFramesFTrealign=AllFramesFT;
             end %end of switch for Water max alignment p[re-initialisation
 
-            MRS_struct.fids.waterfreq(ii,:) = MRS_struct.spec.freq(FrameMaxPos);%to be used for the output figure
+            MRS_struct.fids.waterfreq(ii,:) = MRS_struct.spec.freq(ii,FrameMaxPos);%to be used for the output figure
 
             %Frame-by-Frame alignment
             switch MRS_struct.p.AlignTo
@@ -495,9 +495,9 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
 %                     B = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).on(ii,:);
 %                     D = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).off(ii,:);%
 %                     
-%                     z=abs(MRS_struct.spec.freq-3.5);
+%                     z=abs(MRS_struct.spec.freq(ii,:)-3.5);
 %                     lower=find(min(z)==z);
-%                     z=abs(MRS_struct.spec.freq-2.2);
+%                     z=abs(MRS_struct.spec.freq(ii,:)-2.2);
 %                     upper=find(min(z)==z);
 %                     
 %                     [D2 B2]=diff_align(D,B,lower:upper); % The diff_align function now in Gannet 3.0 -- MGSaleh 2016
@@ -524,9 +524,9 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     %eval(['C','= MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.off(ii,:)',';']);
                     %eval(['D','= MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target),'.off(ii,:)',';']);
                     
-                    z=abs(MRS_struct.spec.freq-3.53);
+                    z=abs(MRS_struct.spec.freq(ii,:)-3.53);
                     lower=find(min(z)==z);
-                    z=abs(MRS_struct.spec.freq-2.8);
+                    z=abs(MRS_struct.spec.freq(ii,:)-2.8);
                     upper=find(min(z)==z);
                     if isempty(lower:upper)
                         [upper,lower] = deal(lower,upper);
@@ -534,15 +534,15 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     
 %                     figure(7)
 %                     n=1;
-%                     plot(MRS_struct.spec.freq(lower:upper),real([A(n,(lower):(upper)); B(n,(lower):(upper)) ;C(n,(lower):(upper)); D(1,(lower):(upper))]'))
+%                     plot(MRS_struct.spec.freq(ii,lower:upper),real([A(n,(lower):(upper)); B(n,(lower):(upper)) ;C(n,(lower):(upper)); D(1,(lower):(upper))]'))
 %                     title('before')
                     
                     [D2 C2]=diff_align(D,C,lower:upper); % The diff_align function now in Gannet 3.0 -- MGSaleh 2016
                     [D2 A2]=diff_align(D,A,lower:upper);
                     
-%                     z=abs(MRS_struct.spec.freq-6);
+%                     z=abs(MRS_struct.spec.freq(ii,:)-6);
 %                     lower=find(min(z)==z);
-%                     z=abs(MRS_struct.spec.freq-2.8);
+%                     z=abs(MRS_struct.spec.freq(ii,:)-2.8);
 %                     upper=find(min(z)==z);
 %                     if isempty(lower:upper)
 %                         [upper,lower] = deal(lower,upper);
@@ -551,7 +551,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     B2=B;
 %                     figure(8)
 %                     n=1;
-%                     plot(MRS_struct.spec.freq(lower:upper),real([A2(n,(lower):(upper)); B2(n,(lower):(upper)) ;C2(n,(lower):(upper)); D2(1,(lower):(upper))]'))
+%                     plot(MRS_struct.spec.freq(ii,lower:upper),real([A2(n,(lower):(upper)); B2(n,(lower):(upper)) ;C2(n,(lower):(upper)); D2(1,(lower):(upper))]'))
 %                     title('after')
                     
 %                     eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)', '=A2-C2;'])
@@ -596,10 +596,17 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
 %                     eval(['MRS_struct.spec.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)',  '=fftshift(fft(xxx(ii,:)));']);
                     
                     % Need to add baseline correction. Something like min(2.7 to 3.5) shift to zero line. This is equivalent to linear baseline correction with slope zero -- MGSaleh 2016
-                    z=abs(MRS_struct.spec.freq-4.0);
-                    lowerbound=find(min(z)==z);
-                    z=abs(MRS_struct.spec.freq-2.8); %2.75
-                    upperbound=find(min(z)==z);
+                    if ~strcmp(gabafile{ii}((end-3):end),'.mat')
+                        z=abs(MRS_struct.spec.freq(ii,:)-4.0);
+                        lowerbound=find(min(z)==z);
+                        z=abs(MRS_struct.spec.freq(ii,:)-2.8); %2.75
+                        upperbound=find(min(z)==z);
+                    else
+                        z=abs(MRS_struct.spec.freq(ii,:)-1.5);
+                        lowerbound=find(min(z)==z);
+                        z=abs(MRS_struct.spec.freq(ii,:)-0); %2.75
+                        upperbound=find(min(z)==z);
+                    end
                     freqbounds=lowerbound:upperbound;
                     if isempty(freqbounds)
                         [upperbound,lowerbound]=deal(lowerbound,upperbound);
@@ -615,6 +622,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     xx3 = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:);
                     xx4 = complex(real(xx3) - 1*low_val*(ones(yy)), imag(xx3));
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = xx4;
+                    MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:) = complex(real(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:)) + 1*low_val*(ones(yy)), imag(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:)));
                 end
             else
                 if strcmp(MRS_struct.p.target, 'GSH')
@@ -677,17 +685,17 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
              if strcmp(MRS_struct.p.AlignTo,'no')~=1
                 CrFitLimLow=2.72;
                 CrFitLimHigh=3.12;
-                z=abs(MRS_struct.spec.freq-CrFitLimHigh);
+                z=abs(MRS_struct.spec.freq(ii,:)-CrFitLimHigh);
                 lb=find(min(z)==z);
-                z=abs(MRS_struct.spec.freq-CrFitLimLow);
+                z=abs(MRS_struct.spec.freq(ii,:)-CrFitLimLow);
                 ub=find(min(z)==z);
                 CrFitRange=ub-lb;
                 plotrealign=[real(AllFramesFT((lb):(ub),:)); real(AllFramesFTrealign((lb):(ub),:))];
                 if isempty(plotrealign)
                     [ub,lb] = deal(lb,ub);
                     CrFitRange=ub-lb;
-                    plotrealign=[real(AllFramesFT((lb):(ub),:)); real(AllFramesFTrealign((lb):(ub),:))];
-                    plotrealign=flip(plotrealign);
+                    plotrealign=[real(AllFramesFTrealign((lb):(ub),:)); real(AllFramesFT((lb):(ub),:))];
+                    plotrealign=flipud(plotrealign);
                 end
                 %don't display rejects
                 plotrealign((ub-lb+1):end,(MRS_struct.out.reject(:,ii).'==1))=min(plotrealign(:));
@@ -710,7 +718,9 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
              if strcmp(MRS_struct.p.vendor,'Siemens')
                  tmp = [ 'Filename    : ' MRS_struct.gabafile{ii*2-1} ];
              else
-                tmp = [ 'Filename    : ' MRS_struct.gabafile{ii} ];
+                %tmp = [ 'Filename    : ' MRS_struct.gabafile{ii} ]; % MM
+                [~,b] = fileparts(MRS_struct.gabafile{ii});
+                tmp = [ 'Filename    : ' b ];
              end
              tmp = regexprep(tmp, '_','-');
              text(0,0.9, tmp, 'FontName', 'Helvetica','FontSize',13);

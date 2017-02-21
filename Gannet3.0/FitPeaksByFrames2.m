@@ -17,15 +17,13 @@
             @(xdummy, ydummy) LorentzModel(xdummy, ydummy), ...
             initx, nlinopts);
         FitParams(jj,:) = fit_param;
-        FitParams2(jj,:) = fit_param;
-        fit_plot = LorentzModel(fit_param, freq);
-        %fit_plot = LorentzModel_nolinear(fit_param, freq);
+        %FitParams2(jj,:) = fit_param;
+        %fit_plot = LorentzModel(fit_param, freq);
+        %fit_plot = LorentzModel_nolinear(fit_param, freq);        
         
-        if any(jj == [287 293 295 297])
-            figure(3); subplot(1,2,1);plot(freq', real(FrameData(:,jj)), 'g', freq', fit_plot,'b');
-            pause
-            set(gca,'XDir','reverse');
-        end
+        %figure(3); plot(freq', real(FrameData(:,jj)), 'g', freq', fit_plot,'b');
+        %pause(0.001);
+        %set(gca,'XDir','reverse');
         %input('next')
     end
     
