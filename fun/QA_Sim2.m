@@ -1,6 +1,6 @@
 function out = QA_Sim(MRS_struct, indSim)
-% f_results is vector of 320 freq offset estimates (in Hz) or minus the correction factors
-% ph_results is vector of 320 phase offset estimates (in deg)
+% f_results is vector of Navg freq offset estimates or minus the correction factors (in Hz)
+% ph_results is vector of Navg phase offset estimates (in deg)
 
 % Load freq and phase offsets added to simulated data (ground truths)
 load(fullfile(pwd, 'data', 'simulated', 'simHermesWithDrift_Feb20.mat'));
@@ -26,7 +26,3 @@ out.quality.f = 1 - out.error.rms_f/rms_f0;
 out.quality.ph = 1 - out.error.rms_ph/rms_ph0;
 
 out.quality.overall = (out.quality.f + out.quality.ph)/2;
-
-
-
-

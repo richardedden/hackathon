@@ -9,7 +9,7 @@ last4char=lastchar((end-3):end);
 if(strcmpi(last2char,'.7'))
     MRS_struct.p.vendor = 'GE';
     MRS_struct.p.Reference_compound='H2O';
-elseif(strcmpi(last4char,'SDAT')) || (strcmpi(last4char,'.mat')) % MM (170214)
+elseif(strcmpi(last4char,'SDAT')) || (strcmpi(last4char,'.mat')) % MM
     MRS_struct.p.vendor = 'Philips';
     if(strcmp(last4char,'SDAT'))
        MRS_struct.p.spar_string='SPAR';

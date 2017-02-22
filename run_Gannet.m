@@ -1,18 +1,23 @@
 %%% Batch-run Gannet3.0 (hackathon version) %%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This script *must* be run from within the "hackathon" directory %
+% This script *must* be run from within the 'hackathon' directory %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear;
 
-% Add directories to user's search path (ensures Gannet3.0 directory is always at the top of the search path)
+% Add directories to user's search path (ensures 'Gannet3.0' and 'data' directories are always at the top of the search path)
 addpath(fullfile(pwd,'Gannet3.0'), fullfile(pwd,'data'));
 
-% Create list of files to process
+% Create 'output' directory
+if ~exist('output','dir')
+    mkdir('output');
+end
+
+% Create list of SDAT files to process
 exp = {'GO','IW','KC','MS'};
 subj = {'S01','S02','S03','S04','S05','S06','S07','S08','S09','S10'};
-
+ 
 metab = cell(numel(exp)*numel(subj),1);
 water = metab;
 c = 1;
@@ -34,11 +39,11 @@ close all;
 newFilename = false;
 runNum = 1;
 filename = ['hackathon_data_run' num2str(runNum) '.mat'];
-filename = fullfile(pwd,'output',filename);
+filename = fullfile(pwd, 'output', filename);
 while ~newFilename
     if exist(filename,'file')
         runNum = runNum + 1;
-        filename = fullfile(pwd,'output',['hackathon_data_run' num2str(runNum) '.mat']);
+        filename = fullfile(pwd, 'output', ['hackathon_data_run' num2str(runNum) '.mat']);
     else
         newFilename = true;
     end

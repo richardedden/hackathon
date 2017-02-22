@@ -2,7 +2,7 @@ function out = QA_InVivo(MRS_struct, show_plots, indSim)
 
 % Set some initial variables
 n = 1:numel(MRS_struct.gabafile); % spectra to run QA on
-n(indSim) = []; % remove simulated data
+n(indSim) = []; % exclude simulated data
 freq = MRS_struct.spec.freq;
 GABA_diff = real(MRS_struct.spec.vox1.GABAGlx.diff);
 GABA_diff_noalign = real(MRS_struct.spec.vox1.GABAGlx.diff_noalign);
@@ -34,17 +34,19 @@ for ii = n
     out.SA.GABA.prealign_max(ii) = max(GABA_diff_noalign(ii,ChoRange));
     out.SA.GABA.postalign_std(ii) = std(GABA_diff(ii,ChoRange));
     out.SA.GABA.postalign_max(ii) = max(GABA_diff(ii,ChoRange));
-    out.GABA_noise(ii,:) = std(GABA_diff(ii,noiseRange));
-    out.SA.GABA.prealign_SNR(ii) = out.SA.GABA.prealign_max(ii)/out.GABA_noise(ii,:);
-    out.SA.GABA.postalign_SNR(ii) = out.SA.GABA.postalign_max(ii)/out.GABA_noise(ii,:);
+    out.noise.GABA.prealign(ii) = std(detrend(GABA_diff_noalign(ii,noiseRange)));
+    out.noise.GABA.postalign(ii) = std(detrend(GABA_diff(ii,noiseRange)));
+    out.SA.GABA.prealign_SNR(ii) = out.SA.GABA.prealign_max(ii)/out.noise.GABA.prealign(ii);
+    out.SA.GABA.postalign_SNR(ii) = out.SA.GABA.postalign_max(ii)/out.noise.GABA.postalign(ii);
     
     out.SA.GSH.prealign_std(ii) = std(GSH_diff_noalign(ii,ChoRange));
     out.SA.GSH.prealign_max(ii) = max(GSH_diff_noalign(ii,ChoRange));
     out.SA.GSH.postalign_std(ii) = std(GSH_diff(ii,ChoRange));
     out.SA.GSH.postalign_max(ii) = max(GSH_diff(ii,ChoRange));
-    out.GSH_noise(ii,:) = std(GSH_diff(ii,noiseRange));
-    out.SA.GSH.prealign_SNR(ii) = out.SA.GSH.prealign_max(ii)/out.GSH_noise(ii,:);
-    out.SA.GSH.postalign_SNR(ii) = out.SA.GSH.postalign_max(ii)/out.GSH_noise(ii,:);
+    out.noise.GSH.prealign(ii) = std(detrend(GSH_diff_noalign(ii,noiseRange)));
+    out.noise.GSH.postalign(ii) = std(detrend(GSH_diff(ii,noiseRange)));
+    out.SA.GSH.prealign_SNR(ii) = out.SA.GSH.prealign_max(ii)/out.noise.GSH.prealign(ii);
+    out.SA.GSH.postalign_SNR(ii) = out.SA.GSH.postalign_max(ii)/out.noise.GSH.postalign(ii);
     
     % Normalize outcomes relative to pre-aligned data
     % 1 = perfect; 0 = did nothing; < 0 = worse than no alignment
@@ -92,6 +94,7 @@ end
 
 out.SA.GABA.overall_quality = mean(out.SA.GABA.quality);
 out.SA.GSH.overall_quality = mean(out.SA.GSH.quality);
+out.SA.overall_quality = (out.SA.GABA.overall_quality + out.SA.GSH.overall_quality)/2;
 
 close all;
 
