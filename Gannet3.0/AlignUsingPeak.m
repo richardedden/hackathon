@@ -1,9 +1,7 @@
-function [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_struct)
+function [AllFramesFTrealign, MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_struct)
     %Using the freq information from MRS_struct, determine appropriate range to
     %fit NAA signal over
-    ii=MRS_struct.ii;
-%     figure(99);
-%     plot(MRS_struct.spec.freq(ii,:),AllFramesFTrealign);
+    ii=MRS_struct.ii; % MM
     
     switch MRS_struct.p.AlignTo
         case 'NAA'
@@ -27,21 +25,21 @@ function [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_s
         case 'Cho'  
             PEAK_ppm=3.2; 
             %Determine limits                                                                                                                                       
-            z=abs(MRS_struct.spec.freq(ii,:)-3.4); %3.32                                                                                                                      
+            z=abs(MRS_struct.spec.freq(ii,:)-3.4);  % MM (for simulated data; orig = 3.32)
             lb=find(min(z)==z);                                                                                                                                      
-            z=abs(MRS_struct.spec.freq(ii,:)-3.16); %3.1                                                                                                                    
+            z=abs(MRS_struct.spec.freq(ii,:)-3.16); % MM (for simulated data; orig = 3.1)                                                                                                                
             ub=find(min(z)==z);
             Initx = [ 30 0.05 PEAK_ppm 0 0 0 ];
     end
     
     %Set initial parameters by fitting the sum    
     freqrange = MRS_struct.spec.freq(ii,lb:ub);
-    if isempty(freqrange)
+    if isempty(freqrange) % MM (for simulated data)
         [ub,lb] = deal(lb,ub);        
         freqrange = MRS_struct.spec.freq(ii,lb:ub);
     end    
-%     plot(MRS_struct.spec.freq(ii,lb:ub), sum(AllFramesFTrealign(lb:ub,:),2));    
-    Initx(1) = max(sum(AllFramesFTrealign(lb:ub,:),2));
+    %plot(MRS_struct.spec.freq(ii,lb:ub), sum(AllFramesFTrealign(lb:ub,:),2));    
+    Initx(1) = max(sum(AllFramesFTrealign(lb:ub,:),2));  % MM (for simulated data)
     SumSpec = sum(AllFramesFTrealign(lb:ub,:),2);
     SumSpecParams = FitPeaksByFrames2(freqrange, SumSpec, Initx);
     %FitPeaksByFrames2 now edited so that output params have same units as Initx
@@ -70,11 +68,7 @@ function [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_s
     FrameShift_points=round((real(FrameParams(:,3))-PEAK_ppm)/freq_step_size);
     for jj=1:size(FrameShift_points,1)
         AllFramesFTrealign(:,jj)=circshift(AllFramesFTrealign(:,jj),[FrameShift_points(jj) 0]);
-    end
-    
-%     MRS_struct.out.f_results(ii,:) = (real(SumSpecParams(3))-PEAK_ppm)*MRS_struct.p.LarmorFreq+(real(FrameParams(:,3))-PEAK_ppm)*MRS_struct.p.LarmorFreq;
-    MRS_struct.out.f_results(ii,:) = (real(FrameParams(:,3))-PEAK_ppm)*MRS_struct.p.LarmorFreq;
-    MRS_struct.out.ph_results(ii,:) = real(FrameParams(:,4))/pi*180;
+    end    
     
     %subplot(1,3,2)
     %plot(MRS_struct.spec.freq(ii,:),real(AllFramesFTrealign))
@@ -86,12 +80,16 @@ function [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_s
     %size(repmat(exp(1i*SumSpecParams(:,4)).',[length(MRS_struct.spec.freq(ii,:)) 1]))
     AllFramesFTrealign=AllFramesFTrealign.*repmat(exp(1i*FrameParams(:,4)).',[length(MRS_struct.spec.freq(ii,:)) 1]);
     AllFramesFTrealign=AllFramesFTrealign-repmat(FrameParams(:,5).',[length(MRS_struct.spec.freq(ii,:)) 1]);
+    
+    % MM
+    MRS_struct.out.f_results(ii,:) = (real(SumSpecParams(3))-PEAK_ppm)*MRS_struct.p.LarmorFreq + (real(FrameParams(:,3))-PEAK_ppm)*MRS_struct.p.LarmorFreq; % freq estimates (Hz)
+    MRS_struct.out.ph_results(ii,:) = (real(SumSpecParams(4)) + real(FrameParams(:,4)))/pi*180; % phase estimates (deg)
+    
     %subplot(1,3,3)
     %plot(MRS_struct.spec.freq(ii,:),real(AllFramesFTrealign))
     %set(gca,'XLim',[1.5 2.5]);
     %set(gca,'XDir','reverse');
-    %Fit just the Cr in the aligned mean spectrum to get CrFWHMHz
-            
+    %Fit just the Cr in the aligned mean spectrum to get CrFWHMHz            
     CrFitLimLow=2.6;
     CrFitLimHigh=3.11;
     %Still need ranges for Creatine align plot
@@ -100,7 +98,7 @@ function [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFTrealign,MRS_s
     z=abs(MRS_struct.spec.freq(ii,:)-CrFitLimLow);
     cub=find(min(z)==z);
     freqrange=MRS_struct.spec.freq(ii,clb:cub);
-    if isempty(freqrange)
+    if isempty(freqrange) % MM (for simulated data)
         [cub,clb] = deal(clb,cub);        
         freqrange = MRS_struct.spec.freq(ii,clb:cub);
     end        

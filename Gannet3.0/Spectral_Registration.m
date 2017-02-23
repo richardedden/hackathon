@@ -1,9 +1,11 @@
-function [AllFramesFTrealign MRS_struct] = Spectral_Registration(MRS_struct, OnWhat, Dual)
+function [AllFramesFTrealign, MRS_struct] = Spectral_Registration(MRS_struct, OnWhat, Dual)
 %Spectral Registration is a time-domain frequency-and-phse correction as
 %per Near et al. 2014 [under review].
 % OnWhat = 0 for spectro data OnWhat=1 for water data
-%MRS_struct.p.parsFit=[];
-ii=MRS_struct.ii;
+
+%MRS_struct.p.parsFit=[]; % MM
+ii=MRS_struct.ii; % MM
+
 %Dual-channel option only applies registration separately to ONs and OFFs
 SpecRegLoop=0;
 if(nargin==3)
@@ -50,7 +52,7 @@ while(SpecRegLoop>(-1))
     input.dwelltime=1/MRS_struct.p.sw;
     time=((0:1:(MRS_struct.p.npoints-1)).'/MRS_struct.p.sw);
     %Fitting to determine frequency and phase corrections.
-    reverseStr = '';
+    reverseStr = ''; % MM
     for corrloop=1:size(flatdata,3)
         target=MRS_struct.fids.flattarget(:);
         transient=squeeze(flatdata(:,:,corrloop));
@@ -74,12 +76,11 @@ while(SpecRegLoop>(-1))
         
     else
         
-        %Applying frequency and phase corrections.
-%         MRS_struct.p.parsFit=[MRS_struct.p.parsFit parsFit];
-        MRS_struct.p.parsFit(:,:,ii)=parsFit; % MM
-%         MRS_struct.out.f_results(MRS_struct.ii,:) = MRS_struct.p.parsFit(:,1)';
-%         MRS_struct.out.ph_results(MRS_struct.ii,:) = MRS_struct.p.parsFit(:,2)';
+        % MM
+        %MRS_struct.p.parsFit=[MRS_struct.p.parsFit parsFit];
+        MRS_struct.p.parsFit(:,:,ii)=parsFit;
         
+        %Applying frequency and phase corrections.
         for corrloop=1:size(flatdata,3)
             
             if(nargin==3)
@@ -129,7 +130,7 @@ while(SpecRegLoop>(-1))
             z=abs(MRS_struct.spec.freq(ii,:)-ChoCrFitLimLow);
             ccub=find(min(z)==z);
             freqrange=MRS_struct.spec.freq(ii,cclb:ccub);
-            if isempty(freqrange) % MM
+            if isempty(freqrange) % MM (for simulated data)
                 [ccub,cclb] = deal(cclb,ccub);
                 freqrange=MRS_struct.spec.freq(ii,cclb:ccub);
             end
@@ -170,8 +171,8 @@ while(SpecRegLoop>(-1))
                 ChoCrMeanSpecFit = FitChoCr(freqrange, ChoCrMeanSpec, ChoCr_initx,MRS_struct.p.LarmorFreq);
                 
                 % MM
-                MRS_struct.out.f_results(ii,:) = MRS_struct.p.parsFit(:,1,ii)' + (ChoCrMeanSpecFit(3) - 3.02*MRS_struct.p.LarmorFreq);
-                MRS_struct.out.ph_results(ii,:) = MRS_struct.p.parsFit(:,2,ii)' + ChoCrMeanSpecFit(4);
+                MRS_struct.out.f_results(ii,:) = -(MRS_struct.p.parsFit(:,1,ii)' + -(ChoCrMeanSpecFit(3) - 3.02*MRS_struct.p.LarmorFreq)); % freq estimates (Hz)
+                MRS_struct.out.ph_results(ii,:) = MRS_struct.p.parsFit(:,2,ii)' + ChoCrMeanSpecFit(4); % phase estimates (deg)
                 
                 MRS_struct.out.ChoCrMeanSpecFit = ChoCrMeanSpecFit./[1 (2*MRS_struct.p.LarmorFreq) (MRS_struct.p.LarmorFreq) (180/pi) 1 1 1];
                 AllFramesFTrealign=AllFramesFTrealign*exp(1i*pi/180*(ChoCrMeanSpecFit(4)));%phase
@@ -194,7 +195,7 @@ while(SpecRegLoop>(-1))
             z=abs(MRS_struct.spec.freq(ii,:)-CrFitLimLow);
             cub=find(min(z)==z);
             freqrange=MRS_struct.spec.freq(ii,clb:cub);
-            if isempty(freqrange) % MM
+            if isempty(freqrange) % MM (for simulated data)
                 [cub,clb] = deal(clb,cub);
                 freqrange=MRS_struct.spec.freq(ii,clb:cub);
             end

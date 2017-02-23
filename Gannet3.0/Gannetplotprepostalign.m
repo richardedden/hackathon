@@ -4,7 +4,7 @@ function Gannetplotprepostalign(MRS_struct, reg, specno)
 %          Plot multiple spectra as a stack - baselines offset
 %            by mean height of GABA
 
-ii=MRS_struct.ii;
+ii=MRS_struct.ii; % MM
 
 for kk = 1:length(reg)
     
@@ -34,7 +34,7 @@ for kk = 1:length(reg)
         end
         
         specbaseline = (mean(real(SpectraToPlot(1,Glx_right:GABA_left)),2));
-        if isnan(specbaseline)
+        if isnan(specbaseline) % MM (for simulated data)
             [GABA_left, Glx_right] = deal(Glx_right, GABA_left);
             specbaseline = (mean(real(SpectraToPlot(1,Glx_right:GABA_left)),2));
         end
@@ -54,10 +54,6 @@ for kk = 1:length(reg)
         GABA_right=find(min(z)==z);
         
         specbaseline = (mean(real(SpectraToPlot(1,Glx_right:GABA_left)),2));
-        if isnan(specbaseline)
-            [GABA_left, Glx_right] = deal(Glx_right, GABA_left);
-            specbaseline = (mean(real(SpectraToPlot(1,Glx_right:GABA_left)),2));
-        end
     end
     
     
@@ -78,7 +74,7 @@ for kk = 1:length(reg)
         
         % averaged gaba height across all scans - to estimate stack spacing
         gabaheight = abs(max(SpectraToPlot(1,Glx_right:GABA_right),[],2));
-        if isempty(gabaheight)
+        if isempty(gabaheight) % MM (for simulated data)
             [GABA_right, Glx_right] = deal(Glx_right, GABA_right);
             gabaheight = abs(max(SpectraToPlot(1,Glx_right:GABA_right),[],2));
         end
@@ -88,7 +84,7 @@ for kk = 1:length(reg)
         if strcmp(MRS_struct.p.target2, 'Lac')  % Defining different limits for diferent target -- MGSaleh 2016
             plotstackoffset = plotstackoffset * 0.5 * gabaheight;
         else
-            if ~strcmp(MRS_struct.gabafile{ii}((end-3):end),'.mat') % MM
+            if ~strcmp(MRS_struct.gabafile{ii}((end-3):end),'.mat') % MM (for simulated data)
                 plotstackoffset = plotstackoffset * 1.75 * gabaheight; %RE % 3.0
             else
                 plotstackoffset = plotstackoffset * 1.3 * gabaheight; %RE % 3.0
@@ -110,10 +106,10 @@ for kk = 1:length(reg)
             yaxismax = (numspec + 1.0) * 0.5 * gabaheight; % top spec + 0.5 * height of gaba %Changed slightly by MGSaleh to accomodate both GSH and GSH/Lac -- 2016
         else
             %yaxismax = (numspec + 1.0) * 3.0 * gabaheight; % top spec + 1.0 * height of gaba %Changed slightly by MGSaleh to accomodate both GSH and GABAGlx/GSH -- 2016
-            if ~strcmp(MRS_struct.gabafile{ii}((end-3):end),'.mat')
-                yaxismax = (numspec + 1.0) * 1.95 * gabaheight; % MM
+            if ~strcmp(MRS_struct.gabafile{ii}((end-3):end),'.mat') % MM (for simulated data)
+                yaxismax = (numspec + 1.0) * 1.95 * gabaheight;
             else
-                yaxismax = (numspec + 1.0) * 1.35 * gabaheight; % MM
+                yaxismax = (numspec + 1.0) * 1.35 * gabaheight;
             end
         end
         yaxismin =  -2.0* gabaheight; % extend 2* gaba heights below zero %Changed slightly by MGSaleh to accomodate both GSH and GABAGlx/Lac -- 2016

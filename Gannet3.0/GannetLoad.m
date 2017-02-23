@@ -1,12 +1,16 @@
 function MRS_struct=GannetLoad(gabafile, waterfile) %, data_phase_correction, water_phase_correction)
-%Gannet 2.0 GannetLoad
+%Gannet 3.0 GannetLoad
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hackathon version (MM 170223) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %Started by RAEE Nov 5, 2012
 %Eddy current correction added by MGSaleh (2016) using the formula described by
 %Jiru (2008), EJR,67:202-217. This is an option which can switched off by
 %a Gannet user. Default vslue is 1, which means apply correction to both
 %unsuppressed (water) and suppressed data. The correction has not been 
 %tested during batch processing.
-
 
 %Aim to make the GannetLoad more modular and easier to understand/edit, and
 %especially to integrate the workflow for different filetypes more.
@@ -22,7 +26,7 @@ function MRS_struct=GannetLoad(gabafile, waterfile) %, data_phase_correction, wa
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   0. Check the file list for typos
+%   0. Check the file list for typos   % MM (commented out for simulated data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % missing=0;
 % for filecheck=1:length(gabafile)
@@ -59,7 +63,7 @@ function MRS_struct=GannetLoad(gabafile, waterfile) %, data_phase_correction, wa
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   1. Pre-initialise
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-MRS_struct.versionload = 'hackathon-170223';  %'140709'; %format - yy/mm/dd  -- MGSaleh 2016
+MRS_struct.versionload = 'hackathon-170223'; % MM  %'140709'; %format - yy/mm/dd  -- MGSaleh 2016
 MRS_struct.ii=0;
 MRS_struct.gabafile=gabafile;
 MRS_struct=GannetPreInitialise(MRS_struct);
@@ -135,7 +139,6 @@ MRS_struct=GannetDiscernDatatype(pfiles{1},MRS_struct);
 
 for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
     MRS_struct.ii=ii;
-%     fprintf('\n***** Analyzing %s *****\n', gabafile{ii}); % MM (170217)
     
     switch MRS_struct.p.vendor
         case 'GE'
@@ -222,7 +225,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             
         case 'Philips'
             
-            % MM (170206)            
+            % MM (for simulated data)
             if ~strcmp(gabafile{ii}((end-3):end),'.mat')
                 if(exist('waterfile'))
                     MRS_struct.p.Reference_compound='H2O';
@@ -246,14 +249,13 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 MRS_struct.fids.data(:,2:4:end) = simHermes.fids(:,:,2);
                 MRS_struct.fids.data(:,3:4:end) = simHermes.fids(:,:,3);
                 MRS_struct.fids.data(:,4:4:end) = simHermes.fids(:,:,4);
-                MRS_struct.fids.data = MRS_struct.fids.data;
                 
                 MRS_struct.p.Navg(ii) = 320;
                 MRS_struct.p.voxsize(ii,:) = [30 30 30];
                 MRS_struct.p.voxoff(ii,:) = [0 0 0];
                 MRS_struct.p.voxang(ii,:) = [0 0 0];
                 MRS_struct.p.LarmorFreq = simHermes.txfrq/1e6;
-                MRS_struct.p.Reference_compound='Cr';
+                MRS_struct.p.Reference_compound = 'Cr';
             end
             
             da_xres = MRS_struct.p.npoints;
@@ -280,7 +282,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 case 'offfirst'                    
                     if MRS_struct.p.HERMES % HERMES: GABAGlx or Lac and GSH -- Added by MGSaleh & MM 2016
                         if strcmp(MRS_struct.p.target, 'GABAGlx') || strcmp(MRS_struct.p.target2, 'GSH')
-                            if ~strcmp(gabafile{ii}((end-3):end),'.mat')
+                            if ~strcmp(gabafile{ii}((end-3):end),'.mat') % MM (for simulated data)
                                 % 1=ExpA, 2=ExpD, 3=ExpC, 4=ExpB -- MM 2016
                                 %MRS_struct.fids.ON_OFF=repmat([0 1 1 0 0 1 1 0 0 1],[1 size(MRS_struct.fids.data,2)/10]);  % GABA % For 7T data we have for now -- MGSaleh
                                 %MRS_struct.fids.ON_OFF2=repmat([1 0 1 0 1 0 1 0 1 0],[1 size(MRS_struct.fids.data,2)/10]); % GSH  % For 7T data we have for now -- MGSaleh
@@ -390,8 +392,10 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             % work out frequency scale
             %MRS_struct.p.sw
             %MRS_struct.p.LarmorFreq
-            freqrange=MRS_struct.p.sw/MRS_struct.p.LarmorFreq;
-            if ~strcmp(gabafile{ii}((end-3):end),'.mat')
+            
+            % MM: individual freq axes saved for each separate dataset
+            if ~strcmp(gabafile{ii}((end-3):end),'.mat') % MM (for simulated data)
+                freqrange = MRS_struct.p.sw/MRS_struct.p.LarmorFreq;
                 MRS_struct.spec.freq(ii,:) = (MRS_struct.p.ZeroFillTo+1-(1:1:MRS_struct.p.ZeroFillTo))/MRS_struct.p.ZeroFillTo*freqrange+4.68-freqrange/2.0;
             else
                 MRS_struct.spec.freq(ii,:) = interp1(simHermes.ppm, simHermes.ppm, linspace(min(simHermes.ppm), max(simHermes.ppm), MRS_struct.p.ZeroFillTo));
@@ -399,7 +403,8 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
 
             %  Frame-by-frame Determination of max Frequency in spectrum (assumed water) maximum
             % find peak location for frequency realignment
-            % MM (170201)
+            
+            % MM
             lb = find(MRS_struct.spec.freq(ii,:)-4.68 >= -0.5);
             ub = find(MRS_struct.spec.freq(ii,:)-4.68 <= 0.5);
             water_range = intersect(lb,ub);
@@ -408,6 +413,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             for kk = 1:size(AllFramesFT,2)
                 FrameMaxPos(kk) = find(abs(AllFramesFT(:,kk)) == FrameMax(kk));
             end
+            
             %Not always true that water starts at 4.68, if drift is rapid...
             water_off=abs(MRS_struct.spec.freq(ii,:)-4.68);
             water_index=find(min(water_off)==water_off);
@@ -435,7 +441,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
             MRS_struct.fids.waterfreq(ii,:) = MRS_struct.spec.freq(ii,FrameMaxPos);%to be used for the output figure
 
             %Frame-by-Frame alignment
-            switch MRS_struct.p.AlignTo
+            switch MRS_struct.p.AlignTo % MM: use AllFramesFT instead of AllFramesFTrealign
                 case 'Cr'
                     [AllFramesFTrealign MRS_struct]=AlignUsingPeak(AllFramesFT,MRS_struct); %#ok<*NCOMMA>
                 %case 'Cr'
@@ -491,28 +497,28 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 %eval(['MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target),'.diff_noalign(ii,:)', '=-(mean(AllFramesFT(:,(MRS_struct.fids.ON_OFF==1)),2)-mean(AllFramesFT(:,(MRS_struct.fids.ON_OFF==0)),2))/2;']); % Not sure whether we want a two here. % Added the minus sign to refelect the spectrum about x-axis -- MGSaleh 2016
                 %eval(['MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff_noalign(ii,:)', '=(mean(AllFramesFT(:,(MRS_struct.fids.ON_OFF2==1)),2)-mean(AllFramesFT(:,(MRS_struct.fids.ON_OFF2==0)),2))/2;']); % Not sure whether we want a two here. The eval function added to determine the target -- MGSaleh 2016
                 
-%                 if ~strcmp(MRS_struct.p.AlignTo, 'Cho')%
-%                     B = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).on(ii,:);
-%                     D = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).off(ii,:);%
-%                     
-%                     z=abs(MRS_struct.spec.freq(ii,:)-3.5);
-%                     lower=find(min(z)==z);
-%                     z=abs(MRS_struct.spec.freq(ii,:)-2.2);
-%                     upper=find(min(z)==z);
-%                     
-%                     [D2 B2]=diff_align(D,B,lower:upper); % The diff_align function now in Gannet 3.0 -- MGSaleh 2016
-%                     B2=B;
-%                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).diff(ii,:) = (B2-D2)/2;
-%                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).off(ii,:)  = D2;
-%                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).on(ii,:)   = B2;
-%                 end
+                %if ~strcmp(MRS_struct.p.AlignTo, 'Cho')%
+                    %B = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).on(ii,:);
+                    %D = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).off(ii,:);%
+                    
+                    %z=abs(MRS_struct.spec.freq(ii,:)-3.5);
+                    %lower=find(min(z)==z);
+                    %z=abs(MRS_struct.spec.freq(ii,:)-2.2);
+                    %upper=find(min(z)==z);
+                    
+                    %[D2 B2]=diff_align(D,B,lower:upper); % The diff_align function now in Gannet 3.0 -- MGSaleh 2016
+                    %B2=B;
+                    %MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).diff(ii,:) = (B2-D2)/2;
+                    %MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).off(ii,:)  = D2;
+                    %MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target)).on(ii,:)   = B2;
+                %end
                 
                 %Performing further correction to minimise subtraction
                 %artifact on GSH edited spectrum -- RAEE and MGSaleh 2016
                 if strcmp(MRS_struct.p.target, 'GABAGlx') && strcmp(MRS_struct.p.target2, 'GSH') && strcmp(MRS_struct.p.AlignTo, 'SpecReg')                    
-%                     x=MRS_struct.spec.GABAGlx;
-%                     MRS_struct.spec.GABAGlx=MRS_struct.spec.GSH;
-%                     MRS_struct.spec.GSH=x;
+                    %x=MRS_struct.spec.GABAGlx;
+                    %MRS_struct.spec.GABAGlx=MRS_struct.spec.GSH;
+                    %MRS_struct.spec.GSH=x;
                     
                     %Insert new code.
                     A = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).on(ii,:);
@@ -528,35 +534,35 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     lower=find(min(z)==z);
                     z=abs(MRS_struct.spec.freq(ii,:)-2.8);
                     upper=find(min(z)==z);
-                    if isempty(lower:upper)
+                    if isempty(lower:upper) % MM (for simulated data)
                         [upper,lower] = deal(lower,upper);
                     end
                     
-%                     figure(7)
-%                     n=1;
-%                     plot(MRS_struct.spec.freq(ii,lower:upper),real([A(n,(lower):(upper)); B(n,(lower):(upper)) ;C(n,(lower):(upper)); D(1,(lower):(upper))]'))
-%                     title('before')
+                    %figure(7)
+                    %n=1;
+                    %plot(MRS_struct.spec.freq(ii,lower:upper),real([A(n,(lower):(upper)); B(n,(lower):(upper)) ;C(n,(lower):(upper)); D(1,(lower):(upper))]'))
+                    %title('before')
                     
                     [D2 C2]=diff_align(D,C,lower:upper); % The diff_align function now in Gannet 3.0 -- MGSaleh 2016
                     [D2 A2]=diff_align(D,A,lower:upper);
                     
-%                     z=abs(MRS_struct.spec.freq(ii,:)-6);
-%                     lower=find(min(z)==z);
-%                     z=abs(MRS_struct.spec.freq(ii,:)-2.8);
-%                     upper=find(min(z)==z);
-%                     if isempty(lower:upper)
-%                         [upper,lower] = deal(lower,upper);
-%                     end
+                    %z=abs(MRS_struct.spec.freq(ii,:)-6);
+                    %lower=find(min(z)==z);
+                    %z=abs(MRS_struct.spec.freq(ii,:)-2.8);
+                    %upper=find(min(z)==z);
+                    %if isempty(lower:upper) % MM (for simulated data)
+                        %[upper,lower] = deal(lower,upper);
+                    %end
                     
                     B2=B;
-%                     figure(8)
-%                     n=1;
-%                     plot(MRS_struct.spec.freq(ii,lower:upper),real([A2(n,(lower):(upper)); B2(n,(lower):(upper)) ;C2(n,(lower):(upper)); D2(1,(lower):(upper))]'))
-%                     title('after')
+                    %figure(8)
+                    %n=1;
+                    %plot(MRS_struct.spec.freq(ii,lower:upper),real([A2(n,(lower):(upper)); B2(n,(lower):(upper)) ;C2(n,(lower):(upper)); D2(1,(lower):(upper))]'))
+                    %title('after')
                     
-%                     eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)', '=A2-C2;'])
-%                     eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.off(ii,:)', '=C2;'])
-%                     eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.on(ii,:)', '=A2;'])
+                    %eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)', '=A2-C2;'])
+                    %eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.off(ii,:)', '=C2;'])
+                    %eval(['MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2),'.on(ii,:)', '=A2;'])
                     
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).on(ii,:)  = A2;
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).off(ii,:) = C2;
@@ -583,20 +589,20 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     %eval(['MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.diff_unfilt_h2o(ii,:)',  '=MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff(ii,:);']);
                     
                     % Convert diff spectrum to time domain, apply water filter, convert back to frequency domain -- GO & MGSaleh 2016
-                    MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = waterremovalSVD(ifft(ifftshift(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:).')),MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048);
+                    MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = waterremovalSVD(ifft(ifftshift(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:).')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048);
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = fftshift(fft(MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:)));
                     
                     %eval(['MRS_struct.fids.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.diff(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);
                     %eval(['MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.diff(ii,:)',  '=fftshift(fft(MRS_struct.fids.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff(ii,:)));']);
                     
-%                     eval(['MRS_struct.fids.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.on(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2), '.on(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);
-%                     eval(['MRS_struct.fids.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.off(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2), '.off(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);
-%                     
-%                     eval(['xxx(ii,:)',  '=MRS_struct.fids.', reg{ii}, sprintf('%s',MRS_struct.p.target2),'.on(ii,:)' '-' 'MRS_struct.fids.', sprintf('%s',MRS_struct.p.target2),'.off(ii,:);']);
-%                     eval(['MRS_struct.spec.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)',  '=fftshift(fft(xxx(ii,:)));']);
+                    %eval(['MRS_struct.fids.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.on(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2), '.on(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);
+                    %eval(['MRS_struct.fids.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.off(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', sprintf('%s',MRS_struct.p.target2), '.off(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);
+                     
+                    %eval(['xxx(ii,:)',  '=MRS_struct.fids.', reg{ii}, sprintf('%s',MRS_struct.p.target2),'.on(ii,:)' '-' 'MRS_struct.fids.', sprintf('%s',MRS_struct.p.target2),'.off(ii,:);']);
+                    %eval(['MRS_struct.spec.', reg{kk}, sprintf('%s',MRS_struct.p.target2),'.diff(ii,:)',  '=fftshift(fft(xxx(ii,:)));']);
                     
                     % Need to add baseline correction. Something like min(2.7 to 3.5) shift to zero line. This is equivalent to linear baseline correction with slope zero -- MGSaleh 2016
-                    if ~strcmp(gabafile{ii}((end-3):end),'.mat')
+                    if ~strcmp(gabafile{ii}((end-3):end),'.mat') % MM (for simulated data)
                         z=abs(MRS_struct.spec.freq(ii,:)-4.0);
                         lowerbound=find(min(z)==z);
                         z=abs(MRS_struct.spec.freq(ii,:)-2.8); %2.75
@@ -608,7 +614,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                         upperbound=find(min(z)==z);
                     end
                     freqbounds=lowerbound:upperbound;
-                    if isempty(freqbounds)
+                    if isempty(freqbounds) % MM (for simulated data)
                         [upperbound,lowerbound]=deal(lowerbound,upperbound);
                         freqbounds=lowerbound:upperbound;
                     end
@@ -622,6 +628,8 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     xx3 = MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:);
                     xx4 = complex(real(xx3) - 1*low_val*(ones(yy)), imag(xx3));
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = xx4;
+                    
+                    % MM, MGS: also shift pre-aligned GSH spectrum
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:) = complex(real(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:)) + 1*low_val*(ones(yy)), imag(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff_noalign(ii,:)));
                 end
             else
@@ -691,7 +699,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 ub=find(min(z)==z);
                 CrFitRange=ub-lb;
                 plotrealign=[real(AllFramesFT((lb):(ub),:)); real(AllFramesFTrealign((lb):(ub),:))];
-                if isempty(plotrealign)
+                if isempty(plotrealign) % MM (for simulated data)
                     [ub,lb] = deal(lb,ub);
                     CrFitRange=ub-lb;
                     plotrealign=[real(AllFramesFTrealign((lb):(ub),:)); real(AllFramesFT((lb):(ub),:))];
@@ -789,8 +797,8 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                   % it's in the current dir...
                   lastslash=0;
               end
-    %           
-               if(strcmpi(MRS_struct.p.vendor,'Philips')) && ~strcmp(gabafile{ii}((end-3):end),'.mat')
+       
+               if(strcmpi(MRS_struct.p.vendor,'Philips')) && ~strcmp(gabafile{ii}((end-3):end),'.mat') % MM
                    tmp = strfind(pfil_nopath, '.sdat');
                    tmp1= strfind(pfil_nopath, '.SDAT');
                    if size(tmp,1)>size(tmp1,1)
@@ -798,7 +806,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                    else
                        dot7 = tmp1(end); % just in case there's another .sdat somewhere else...
                    end
-               elseif(strcmpi(MRS_struct.p.vendor,'Philips')) && strcmp(gabafile{ii}((end-3):end),'.mat')
+               elseif(strcmpi(MRS_struct.p.vendor,'Philips')) && strcmp(gabafile{ii}((end-3):end),'.mat') % MM
                    tmp = strfind(pfil_nopath, '.mat');
                    dot7 = tmp(end);
                elseif(strcmpi(MRS_struct.p.vendor,'GE'))
