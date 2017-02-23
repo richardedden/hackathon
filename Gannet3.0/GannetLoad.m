@@ -1,12 +1,16 @@
 function MRS_struct=GannetLoad(gabafile, waterfile) %, data_phase_correction, water_phase_correction)
-%Gannet 2.0 GannetLoad
+%Gannet 3.0 GannetLoad
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hackathon version (MM 170223) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %Started by RAEE Nov 5, 2012
 %Eddy current correction added by MGSaleh (2016) using the formula described by
 %Jiru (2008), EJR,67:202-217. This is an option which can switched off by
 %a Gannet user. Default vslue is 1, which means apply correction to both
 %unsuppressed (water) and suppressed data. The correction has not been 
 %tested during batch processing.
-
 
 %Aim to make the GannetLoad more modular and easier to understand/edit, and
 %especially to integrate the workflow for different filetypes more.
@@ -245,7 +249,6 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                 MRS_struct.fids.data(:,2:4:end) = simHermes.fids(:,:,2);
                 MRS_struct.fids.data(:,3:4:end) = simHermes.fids(:,:,3);
                 MRS_struct.fids.data(:,4:4:end) = simHermes.fids(:,:,4);
-                MRS_struct.fids.data = MRS_struct.fids.data;
                 
                 MRS_struct.p.Navg(ii) = 320;
                 MRS_struct.p.voxsize(ii,:) = [30 30 30];
@@ -531,7 +534,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     lower=find(min(z)==z);
                     z=abs(MRS_struct.spec.freq(ii,:)-2.8);
                     upper=find(min(z)==z);
-                    if isempty(lower:upper)
+                    if isempty(lower:upper) % MM (for simulated data)
                         [upper,lower] = deal(lower,upper);
                     end
                     
@@ -547,7 +550,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     %lower=find(min(z)==z);
                     %z=abs(MRS_struct.spec.freq(ii,:)-2.8);
                     %upper=find(min(z)==z);
-                    %if isempty(lower:upper)
+                    %if isempty(lower:upper) % MM (for simulated data)
                         %[upper,lower] = deal(lower,upper);
                     %end
                     
@@ -586,7 +589,7 @@ for ii=1:numpfiles    %Loop over all files in the batch (from gabafile)
                     %eval(['MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.diff_unfilt_h2o(ii,:)',  '=MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff(ii,:);']);
                     
                     % Convert diff spectrum to time domain, apply water filter, convert back to frequency domain -- GO & MGSaleh 2016
-                    MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = waterremovalSVD(ifft(ifftshift(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:).')),MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048);
+                    MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = waterremovalSVD(ifft(ifftshift(MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:).')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048);
                     MRS_struct.spec.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:) = fftshift(fft(MRS_struct.fids.(reg{kk}).(sprintf('%s',MRS_struct.p.target2)).diff(ii,:)));
                     
                     %eval(['MRS_struct.fids.', reg{kk}, sprintf('.%s',MRS_struct.p.target2),'.diff(ii,:)',  '=waterremovalSVD(ifft(ifftshift(MRS_struct.spec.', reg{kk}, sprintf('.%s',MRS_struct.p.target2), '.diff(ii,:).'')), MRS_struct.p.sw/1000, 8, -0.08, 0.08, 0, 2048).'';']);

@@ -74,7 +74,7 @@ for kk = 1:length(reg)
         
         % averaged gaba height across all scans - to estimate stack spacing
         gabaheight = abs(max(SpectraToPlot(1,Glx_right:GABA_right),[],2));
-        if isempty(gabaheight)
+        if isempty(gabaheight) % MM (for simulated data)
             [GABA_right, Glx_right] = deal(Glx_right, GABA_right);
             gabaheight = abs(max(SpectraToPlot(1,Glx_right:GABA_right),[],2));
         end

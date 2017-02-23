@@ -1,13 +1,13 @@
-function out = QA_InVivo(MRS_struct, show_plots, indSim)
+function out = QA_InVivo(MRS_struct, showPlots, simInd)
 
 % Set some initial variables
 n = 1:numel(MRS_struct.gabafile); % spectra to run QA on
-n(indSim) = []; % exclude simulated data
+n(simInd) = []; % exclude simulated data
 freq = MRS_struct.spec.freq;
-GABA_diff = real(MRS_struct.spec.vox1.GABAGlx.diff);
 GABA_diff_noalign = real(MRS_struct.spec.vox1.GABAGlx.diff_noalign);
-GSH_diff = real(MRS_struct.spec.vox1.GSH.diff);
+GABA_diff = real(MRS_struct.spec.vox1.GABAGlx.diff);
 GSH_diff_noalign = real(MRS_struct.spec.vox1.GSH.diff_noalign);
+GSH_diff = real(MRS_struct.spec.vox1.GSH.diff);
 
 grey = [0.6 0.6 0.6];
 shading = 0.3;
@@ -54,11 +54,11 @@ for ii = n
     out.SA.GSH.quality(ii) = 1 - out.SA.GSH.postalign_std(ii)/out.SA.GSH.prealign_std(ii);
     
     % Plots
-    if show_plots
+    if showPlots
         
         h1 = figure(111);
-        set(h1, 'Units', 'Normalized', 'OuterPosition', [l b w h]);
-        
+        set(h1, 'Units', 'normalized', 'OuterPosition', [l b w h], ...
+            'Name', 'QA of In Vivo Data', 'NumberTitle', 'off');
         % GABA DIFF spectra
         subplot(2,1,1);
         hold on;
@@ -67,10 +67,11 @@ for ii = n
             'facecolor', grey+(1-grey)*(1-shading), 'edgecolor', 'none');
         h2 = plot(freq(ii,:), GABA_diff_noalign(ii,:), 'r', freq(ii,:), GABA_diff(ii,:), 'b');
         hold off;
-        set(gca,'xdir', 'reverse', 'tickdir', 'out', ...
-            'xlim', [3.2-0.75 3.2+0.75], 'ylim', [min([GABA_diff_noalign(ii,plotRange), GABA_diff(ii,plotRange)]), max([GABA_diff_noalign(ii,plotRange), GABA_diff(ii,plotRange)])]);
-        title('GABA');
-        legend(h2,{'PRE','POST'});
+        set(gca, 'xdir', 'reverse', 'tickdir', 'out', 'xlim', [3.2-0.75 3.2+0.75], ...
+            'ylim', [min([GABA_diff_noalign(ii,plotRange), GABA_diff(ii,plotRange)]), max([GABA_diff_noalign(ii,plotRange), GABA_diff(ii,plotRange)])]);
+        text(0.5, 0.85, 'Cho SA', 'Rotation', 90, 'HorizontalAlignment', 'right', 'Units', 'normalized');
+        title(sprintf('PRESS SPACE TO CONTINUE\n\nGABA'));
+        legend(h2, {'PRE','POST'}, 'location', 'northeast');
         legend boxoff;
         
         % GSH DIFF spectra
@@ -82,8 +83,8 @@ for ii = n
         plot(freq(ii,:), GSH_diff_noalign(ii,:), 'r', freq(ii,:), GSH_diff(ii,:), 'b');
         hold off;
         title('GSH');
-        set(gca,'xdir', 'reverse', 'tickdir', 'out', ...
-            'xlim', [3.2-0.75 3.2+0.75], 'ylim', [min([GSH_diff_noalign(ii,plotRange), GSH_diff(ii,plotRange)]), max([GSH_diff_noalign(ii,plotRange), GSH_diff(ii,plotRange)])]);
+        set(gca, 'xdir', 'reverse', 'tickdir', 'out', 'xlim', [3.2-0.75 3.2+0.75], ...
+            'ylim', [min([GSH_diff_noalign(ii,plotRange), GSH_diff(ii,plotRange)]), max([GSH_diff_noalign(ii,plotRange), GSH_diff(ii,plotRange)])]);
         
         pause;
         clf;

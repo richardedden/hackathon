@@ -76,14 +76,11 @@ while(SpecRegLoop>(-1))
         
     else
         
-        %Applying frequency and phase corrections.
-        
         % MM
         %MRS_struct.p.parsFit=[MRS_struct.p.parsFit parsFit];
         MRS_struct.p.parsFit(:,:,ii)=parsFit;
-        %MRS_struct.out.f_results(MRS_struct.ii,:) = MRS_struct.p.parsFit(:,1)';
-        %MRS_struct.out.ph_results(MRS_struct.ii,:) = MRS_struct.p.parsFit(:,2)';
         
+        %Applying frequency and phase corrections.
         for corrloop=1:size(flatdata,3)
             
             if(nargin==3)
@@ -174,7 +171,7 @@ while(SpecRegLoop>(-1))
                 ChoCrMeanSpecFit = FitChoCr(freqrange, ChoCrMeanSpec, ChoCr_initx,MRS_struct.p.LarmorFreq);
                 
                 % MM
-                MRS_struct.out.f_results(ii,:) = MRS_struct.p.parsFit(:,1,ii)' + (ChoCrMeanSpecFit(3) - 3.02*MRS_struct.p.LarmorFreq); % freq estimates (Hz)
+                MRS_struct.out.f_results(ii,:) = -(MRS_struct.p.parsFit(:,1,ii)' + -(ChoCrMeanSpecFit(3) - 3.02*MRS_struct.p.LarmorFreq)); % freq estimates (Hz)
                 MRS_struct.out.ph_results(ii,:) = MRS_struct.p.parsFit(:,2,ii)' + ChoCrMeanSpecFit(4); % phase estimates (deg)
                 
                 MRS_struct.out.ChoCrMeanSpecFit = ChoCrMeanSpecFit./[1 (2*MRS_struct.p.LarmorFreq) (MRS_struct.p.LarmorFreq) (180/pi) 1 1 1];
